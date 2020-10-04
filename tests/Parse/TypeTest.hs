@@ -17,7 +17,7 @@ import Parse.IParser
 import Reporting.Annotation (Located)
 
 
-pending = at 0 0 0 0 $ TupleType []
+pending = at 0 0 0 0 $ TupleType [] (ForceMultiline False) 
 
 expr :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 expr = Parse.Type.expr
@@ -38,7 +38,7 @@ tests =
         , example "comments"
             "({-A-}a{-B-},{-C-}b{-D-})"
             "( {- A -} a {- B -}, {- C -} b {- D -} )\n"
-        , example "newlines" "(\n a\n ,\n b\n )" "( a, b )\n"
+        , example "newlines" "(\n a\n ,\n b\n )" "( a\n, b\n)\n"
         ]
 
     , testGroup "record type"

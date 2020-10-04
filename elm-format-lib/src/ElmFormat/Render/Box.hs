@@ -2160,7 +2160,15 @@ formatLiteral elmVersion lit =
             line $ literal $ show i
         IntNum i HexadecimalInt ->
             line $ literal $
-              if i <= 0xFF then
+              if i < -0xFFFFFFFF then
+                printf "-0x%016X" (-i)
+              else if i < -0xFFFF then
+                printf "-0x%08X" (-i)
+              else if i < -0xFF then
+                printf "-0x%04X" (-i)
+              else if i < 0 then
+                printf "-0x%02X" (-i)
+              else if i <= 0xFF then
                 printf "0x%02X" i
               else if i <= 0xFFFF then
                 printf "0x%04X" i
@@ -2327,9 +2335,15 @@ formatType' elmVersion requireParens atype =
         TypeVariable var ->
             line $ identifier $ formatVarName elmVersion var
 
-        TypeConstruction ctor args ->
+        TypeConstruction ctor args forceMultiline ->
+            let
+                join = 
+                    case forceMultiline of
+                        ForceMultiline True -> FASplitFirst
+                        ForceMultiline False -> FAJoinFirst JoinAll
+            in
             ElmStructure.application
-                (FAJoinFirst JoinAll)
+                join
                 (formatTypeConstructor elmVersion ctor)
                 (map (formatHeadCommented $ formatType' elmVersion ForCtor) args)
                 |> (if not (null args) && requireParens == ForCtor then parens else id)
@@ -2337,8 +2351,8 @@ formatType' elmVersion requireParens atype =
         TypeParens type' ->
           parens $ formatCommented (formatType elmVersion) type'
 
-        TupleType types ->
-          ElmStructure.group True "(" "," ")" False (map (formatC2Eol . (fmap $ formatType elmVersion)) types)
+        TupleType types (ForceMultiline forceMultiline) ->
+            ElmStructure.group True "(" "," ")" forceMultiline (fmap (formatC2Eol . fmap (formatType elmVersion)) types)
 
         RecordType base fields trailing multiline ->
             formatRecordLike

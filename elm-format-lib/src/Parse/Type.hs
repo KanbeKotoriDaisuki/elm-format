@@ -24,18 +24,18 @@ tvar elmVersion =
 
 tuple :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 tuple elmVersion =
-  fmap I.Fix $ addLocation $
+  fmap I.Fix $ addLocation $ checkMultiline $
   do  types <- parens'' (withEol $ expr elmVersion)
       return $
           case types of
               Left comments ->
-                  UnitType comments
+                  \_ -> UnitType comments
               Right [] ->
-                  UnitType []
+                  \_ -> UnitType []
               Right [C ([], []) (C Nothing t)] ->
-                  extract $ I.unFix t
+                  \_ -> extract $ I.unFix t
               Right [C (pre, post) (C eol t)] ->
-                  TypeParens $ C (pre, maybeToList (fmap LineComment eol) ++ post) t
+                  \_ -> TypeParens $ C (pre, maybeToList (fmap LineComment eol) ++ post) t
               Right types' ->
                   TupleType $ fmap (\(C (pre, post) (C eol t)) -> C (pre, post, eol) t) types'
 
@@ -65,7 +65,7 @@ constructor0 elmVersion =
 
 constructor0' :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 constructor0' elmVersion =
-    fmap I.Fix $ addLocation $
+    fmap I.Fix $ addLocation $ checkMultiline $
     do  ctor <- constructor0 elmVersion
         return (TypeConstruction ctor [])
 
@@ -83,7 +83,7 @@ tupleCtor =
 
 app :: ElmVersion -> IParser (ASTNS Located [UppercaseIdentifier] 'TypeNK)
 app elmVersion =
-  fmap I.Fix $ addLocation $
+  fmap I.Fix $ addLocation $ checkMultiline $
   do  f <- constructor0 elmVersion <|> try tupleCtor <?> "a type constructor"
       args <- spacePrefix (term elmVersion)
       return $ TypeConstruction f args

@@ -3,6 +3,8 @@ import Development.Shake.Command
 import Development.Shake.FilePath
 import Development.Shake.Util
 import Control.Monad (forM_)
+import qualified System.Directory
+import qualified System.Info
 
 import qualified Shakefiles.Haskell
 import qualified Shakefiles.Shellcheck
@@ -17,39 +19,40 @@ main = do
       shakeColor = True,
       shakeVersion = shakefilesHash
     } $ do
-    StdoutTrim stackLocalInstallRoot <- liftIO $ cmd "stack path --local-install-root"
-    StdoutTrim gitDescribe <- liftIO $ cmd "git" [ "describe", "--abbrev=8", "--always" ]
+
+    StdoutTrim gitDescribe <- liftIO $ cmd "git" [ "describe", "--abbrev=8", "--match", "[0-9]*", "--always" ]
     StdoutTrim gitSha <- liftIO $ cmd "git" [ "describe", "--always", "--match", "NOT A TAG", "--dirty" ]
 
-    let elmFormat = stackLocalInstallRoot </> "bin/elm-format" <.> exe
-    let elmRefactor = stackLocalInstallRoot </> "bin/elm-refactor" <.> exe
+    let elmFormat = "_build" </> "elm-format" <.> exe
+    let elmRefactor = "_build" </> "elm-refactor" <.> exe
 
     shellcheck <- Shakefiles.Dependencies.rules
 
     want [ "test" ]
 
-    phony "test" $ do
-        need
-            [ "stack-test"
-            , "integration-tests"
-            , "shellcheck"
-            ]
+    phony "test" $ need
+        [ "unit-tests"
+        , "integration-tests"
+        , "shellcheck"
+        ]
 
     phony "build" $ need [ "elm-format", "elm-refactor" ]
     phony "elm-format" $ need [ elmFormat ]
     phony "elm-refactor" $ need [ elmRefactor ]
-    phony "stack-test" $ need
-        [ "_build/stack/elm-format-lib/test.ok"
-        , "_build/stack/elm-format-test-lib/test.ok"
-        , "_build/stack/elm-format/test.ok"
-        , "_build/stack/elm-refactor/test.ok"
+    phony "unit-tests" $ need
+        [ "_build/cabal/elm-format-lib/test.ok"
+        , "_build/cabal/elm-format-test-lib/test.ok"
+        , "_build/cabal/elm-format/test.ok"
+        , "_build/cabal/elm-refactor/test.ok"
         ]
     phony "profile" $ need [ "_build/tests/test-files/prof.ok" ]
+    phony "dist" $ need [ "dist-elm-format" ]
 
     phony "clean" $ do
-        cmd_ "stack clean"
+        removeFilesAfter "dist-newstyle" [ "//*" ]
         removeFilesAfter "_build" [ "//*" ]
-        removeFilesAfter ""
+        removeFilesAfter ".shake" [ "//*" ]
+        removeFilesAfter "."
             [ "_input.elm"
             , "_input2.elm"
             , "formatted.elm"
@@ -104,7 +107,7 @@ main = do
         ]
         [ "elm-format-test-lib" ]
 
-    Shakefiles.Haskell.exe elmFormat "elm-format"
+    Shakefiles.Haskell.executable elmFormat "elm-format" gitDescribe
 
     Shakefiles.Haskell.cabalProject "elm-refactor"
         [ "elm-refactor/elm-refactor.cabal" ]
@@ -116,7 +119,7 @@ main = do
         ]
         [ "elm-format-test-lib" ]
 
-    Shakefiles.Haskell.exe elmRefactor "elm-refactor"
+    Shakefiles.Haskell.executable elmRefactor "elm-refactor" gitDescribe
 
 
     --
@@ -298,7 +301,7 @@ main = do
         let source = dropDirectory1 $ out -<.> "elm"
         need [ elmFormat, source ]
         (Stdout rawJson) <- cmd (FileStdin source) elmFormat "--elm-version=0.19" "--stdin" "--json"
-        (Stdout formattedJson) <- cmd (Stdin rawJson) "python3" "-mjson.tool" "--sort-keys"
+        (Stdout formattedJson) <- cmd (Stdin rawJson) "jq" "--indent" "4" "--sort-keys" "--ascii-output" "."
         writeFileChanged out formattedJson
 
     "_build/tests//*.json_matches" %> \out -> do

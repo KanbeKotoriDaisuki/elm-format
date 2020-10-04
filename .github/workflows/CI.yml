@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: '**'
+  pull_request:
+    branches: [ $default-branch ]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os:
+        - windows-latest
+        # - macOS-latest
+
+    name: ci-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Configure environment
+      run: |
+        git config --global core.autocrlf false
+    - uses: actions/checkout@v2
+    - uses: actions/setup-haskell@v1.1
+      name: Setup Haskell
+      id: setup-haskell
+      with:
+        ghc-version: 8.8.4
+    - uses: actions/cache@v2
+      name: Cache cabal-v2-${{ runner.os }}-${{ hashFiles('cabal.project.freeze') }}
+      with:
+        path: ${{ steps.setup-haskell.outputs.cabal-store }}
+        key: cabal-v2-${{ runner.os }}-${{ hashFiles('cabal.project.freeze') }}
+    # - uses: actions/cache@v2
+    #   name: Cache dist
+    #   with:
+    #     path: dist-newstyle
+    #     key: dist-v1-${{ runner.os }}
+    - run: cabal v2-update
+    - run: ./build.sh -- dependencies
+    - run: ./build.sh -- build
+    - name: Tests
+      if: matrix.os != 'windows-latest'
+      run: |
+        ./build.sh
+    - name: Tests (for Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        ./build.sh -- unit-tests
+        echo "##[warning]integration tests are currently disabled on Windows CI"

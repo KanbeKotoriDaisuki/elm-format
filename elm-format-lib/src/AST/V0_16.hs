@@ -533,12 +533,14 @@ data AST typeRef ctorRef varRef (getType :: NodeKind -> *) (kind :: NodeKind) wh
     TypeConstruction ::
         TypeConstructor typeRef
         -> [C1 Before (getType 'TypeNK)]
+        -> ForceMultiline
         -> AST typeRef ctorRef varRef getType 'TypeNK
     TypeParens ::
         C2 Before After (getType 'TypeNK)
         -> AST typeRef ctorRef varRef getType 'TypeNK
     TupleType ::
         [C2Eol Before After (getType 'TypeNK)]
+        -> ForceMultiline
         -> AST typeRef ctorRef varRef getType 'TypeNK
     RecordType ::
         { base_rt :: Maybe (C2 Before After LowercaseIdentifier)
@@ -640,9 +642,9 @@ mapAll ftyp fctor fvar fast = \case
     -- Types
     UnitType c -> UnitType c
     TypeVariable name -> TypeVariable name
-    TypeConstruction name args -> TypeConstruction (fmap ftyp name) (fmap (fmap fast) args)
+    TypeConstruction name args forceMultiline -> TypeConstruction (fmap ftyp name) (fmap (fmap fast) args) forceMultiline
     TypeParens typ -> TypeParens (fmap fast typ)
-    TupleType typs -> TupleType (fmap (fmap fast) typs)
+    TupleType typs forceMultiline -> TupleType (fmap (fmap fast) typs) forceMultiline
     RecordType base fields c ml -> RecordType base (fmap (fmap fast) fields) c ml
     FunctionType first rest ml -> FunctionType (fmap fast first) (fmap fast rest) ml
 

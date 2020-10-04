@@ -1,7 +1,27 @@
-## master
+## main
 
 Feature changes:
   - Detailed error messages for syntax errors have been removed.  Use elm make to see a detailed error if elm-format fails.
+
+Other changes:
+  - Linux binaries installed with `npm` are now statically linked (should now work on alpine linux and other systems without glibc-2.27)
+
+
+## 0.8.4
+
+New features:
+  - newlines in tuple types are now preserved
+  - newlines in type constructor application are now preserved
+
+Bug fixes:
+  - negative hex int literals are now handled correctly
+  - in doc comments, special characters in link text are now handled more correctly
+  - in doc comments, non-Elm code blocks are no longer elm-formatted
+  - in doc comments, inline code containing backticks is now escaped correctly
+  - in doc comments, relative links with text matching the relative URL are now handled correctly
+
+Other changes:
+  - dropped support for 32-bit Windows (Windows CI platforms are no longer supporting it)
 
 
 ## 0.8.3
@@ -16,7 +36,7 @@ New features:
   - Invalid `(..)` in `@docs` lines are automatically removed.
   - When not specifying `--elm-version`, if auto-detection fails, Elm 0.19 will be assumed instead of failing with an error.
   - `module` lines with no `exposing` clause will have the clause automatically generated.
-  
+
 Feature changes:
   - `exposing (..)` in `module` lines is no longer expanded.
 

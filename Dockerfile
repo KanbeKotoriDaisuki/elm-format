@@ -1,29 +1,68 @@
-# stack installation from https://github.com/samdoshi/docker-haskell-stack
-FROM buildpack-deps:latest
+FROM alpine:latest as build
 
-ENV STACK_VERSION 2.1.3
+ENV GHC_VERSION 8.8.4
 
-ENV STACK_DOWNLOAD_URL https://github.com/commercialhaskell/stack/releases/download/v$STACK_VERSION/stack-$STACK_VERSION-linux-x86_64.tar.gz
-ENV DEBIAN_FRONTEND noninteractive
-ENV PATH $PATH:/root/.local/bin
 ENV LANG C.UTF-8
 
-RUN apt-get update -q && \
-    apt-get install -qy libgmp-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Install ghc and cabal-isntall
+RUN apk add --no-cache curl
+RUN curl https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup > /usr/local/bin/ghcup && \
+    chmod +x /usr/local/bin/ghcup
+RUN ghcup install cabal recommended
+RUN apk add --no-cache \
+        autoconf \
+        gcc \
+        gmp \
+        gmp-dev \
+        libffi \
+        libffi-dev \
+        llvm10 \
+        make \
+        musl-dev \
+        ncurses-dev \
+        ncurses-static \
+        wget \
+        zlib-dev \
+        zlib-static
+RUN ghcup install ghc $GHC_VERSION && \
+    ghcup set ghc $GHC_VERSION
+ENV PATH $PATH:/root/.ghcup/bin
 
-RUN mkdir -p /root/.local/bin && \
-    wget -q -O- $STACK_DOWNLOAD_URL | tar --strip=1 -xvz -C /root/.local/bin/ && \
-    chmod +x /root/.local/bin/stack
-
+WORKDIR /elm-format
 
 # Install elm-format dependencies
-COPY stack.yaml ./
-COPY elm-format.cabal ./
-RUN stack setup
-RUN stack install shake
+COPY cabal.project ./
+COPY cabal.project.freeze ./
 
-RUN stack build --only-snapshot
-RUN stack build --only-dependencies
-RUN stack build --test --only-dependencies
+COPY elm-format-markdown/elm-format-markdown.cabal elm-format-markdown/
+COPY elm-format-lib/elm-format-lib.cabal elm-format-lib/
+COPY elm-format-test-lib/elm-format-test-lib.cabal elm-format-test-lib/
+COPY elm-format.cabal ./
+COPY elm-refactor/elm-refactor.cabal elm-refactor/
+
+RUN cabal v2-update
+
+RUN cabal v2-build --ghc-option=-optl=-static --ghc-option=-split-sections -O2 elm-format-markdown --only-dependencies
+COPY elm-format-markdown elm-format-markdown
+RUN cabal v2-build --ghc-option=-optl=-static --ghc-option=-split-sections -O2 elm-format-markdown
+
+RUN cabal v2-build --ghc-option=-optl=-static --ghc-option=-split-sections -O2 elm-format-lib --only-dependencies
+COPY elm-format-lib elm-format-lib
+RUN cabal v2-build --ghc-option=-optl=-static --ghc-option=-split-sections -O2 elm-format-lib
+
+# RUN cabal v2-install --lib shake
+# RUN cabal v2-build --only-dependencies
+# RUN cabal v2-build --only-dependencies --enable-tests
+# RUN cabal v2-install ShellCheck
+RUN cabal v2-build --ghc-option=-optl=-static --ghc-option=-split-sections -O2 --only-dependencies
+
+# Build elm-format
+COPY src src
+COPY generated generated
+RUN cabal v2-build --ghc-option=-optl=-static --ghc-option=-split-sections -O2
+RUN cp dist-newstyle/build/x86_64-linux/ghc-*/elm-format-*/x/elm-format/opt/build/elm-format/elm-format ./
+RUN strip -s ./elm-format
+
+
+FROM scratch as artifact
+COPY --from=build /elm-format/elm-format /elm-format

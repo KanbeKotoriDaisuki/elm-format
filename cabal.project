@@ -1,0 +1,7 @@
+packages:
+    ./elm-format-markdown,
+    ./elm-format-lib,
+    ./elm-format-test-lib,
+    .,
+    ./elm-refactor
+with-compiler: ghc-8.8.4

@@ -112,9 +112,9 @@ foldReferences ftype fctor fvar =
             -- Types
             UnitType _ -> mempty
             TypeVariable _ -> mempty
-            TypeConstruction name args -> Const (foldTypeConstructor name <> foldMap (getConst . extract) args)
+            TypeConstruction name args _ -> Const (foldTypeConstructor name <> foldMap (getConst . extract) args)
             TypeParens typ -> extract typ
-            TupleType terms -> foldMap extract terms
+            TupleType terms _ -> foldMap extract terms
             RecordType _ fields _ _ -> foldMap (extract . _value) fields
             FunctionType first rest _ -> extract first <> fold rest
 

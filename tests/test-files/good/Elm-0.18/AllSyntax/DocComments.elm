@@ -34,7 +34,8 @@ Images ![][img],
 ![alt text](http://example.com/favicon.ico "and title").
 URL as link: <http://elm-lang.org>
 Link with special characters: <https://developer.mozilla.org/en-US/docs/Web/CSS/@media#Media_features>
-Link with special characters: [Media_features](https://developer.mozilla.org/en-US/docs/Web/CSS/@media#Media_features)
+Link with special characters: [Media\_features](https://developer.mozilla.org/en-US/docs/Web/CSS/@media#Media_features)
+Link to [Module](Module) is not changed to autolink.
 
 [link]: http://example.com#link "with title"
 [reflink]: http://example.com#reflink
@@ -49,6 +50,15 @@ Link with special characters: [Media_features](https://developer.mozilla.org/en-
 1.  First
 2.  Second
 3.  Third
+
+
+# Code inlines
+
+Normal code inline: `word`
+
+Requires backtick escaping: `` `0` ``
+
+Requires multiple backticks for escaping: ``` code with `` ```
 
 
 # HTML blocks
@@ -78,7 +88,7 @@ Followed by a paragraph.
     y /= ()
 
 
-## Elm code lbock: only a module line
+## Elm code block: only a module line
 
     module Foo exposing (x)
 
@@ -103,6 +113,10 @@ Followed by a paragraph.
 
 ```bash
 echo "non-Elm code block"
+```
+
+```sh
+elm-review --template jfmengels/elm-review-noop/preview --rules NoNoOpMsg
 ```
 
 ---
@@ -205,6 +219,12 @@ increment x =
 
   - (\\\\) asd
   - not-quite shruggie ¯\_(ツ)\_/¯
+  - \\ \_ \* \`
+  - [in URL link text \\ \_ \* \`](#)
+  - [in ref link text \\ \_ \* \`][ref]
+  - ![in image link text \\ \_ \* \`](img.png)
+
+ref: #ref
 
 -}
 escapedCharacters =

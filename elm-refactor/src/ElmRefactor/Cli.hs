@@ -9,7 +9,6 @@ import CommandLine.World
 import qualified CommandLine.World as World
 import Data.Coapplicative
 import Data.Either.Extra (collectErrors)
-import Data.Text (Text)
 import ElmFormat.KnownContents (KnownContents)
 import ElmFormat.Upgrade_0_19 (Transformation(..), UpgradeDefinition, parseUpgradeDefinition, applyTransformation)
 import ElmRefactor.CliFlags as Flags

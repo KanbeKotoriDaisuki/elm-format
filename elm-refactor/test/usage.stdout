@@ -1,6 +1,6 @@
 elm-refactor dev
 
-Usage: elm-format [--yes] [--upgrade UPGRADE_DEFINITION]
+Usage: elm-format [--yes] [--upgrade UPGRADE_DEFINITION] 
                   [--import IMPORT_METHOD] INPUT
   Refactor Elm source files.
 

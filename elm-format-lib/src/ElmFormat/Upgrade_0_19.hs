@@ -408,7 +408,7 @@ transformType ::
     -> ASTNS annf (MatchedNamespace [UppercaseIdentifier]) kind -- TODO: should return ((,) Source) instead of annf
 transformType upgradeDefinition typ =
     case extract $ I.unFix typ of
-        TypeConstruction (NamedConstructor (MatchedImport _ ctorNs, ctorName)) args ->
+        TypeConstruction (NamedConstructor (MatchedImport _ ctorNs, ctorName)) args multiline ->
             case Dict.lookup (ctorNs, ctorName) (_typeReplacements upgradeDefinition) of
                 Just (argOrder, newTyp) ->
                     let

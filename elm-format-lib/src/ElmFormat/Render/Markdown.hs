@@ -1,12 +1,15 @@
 module ElmFormat.Render.Markdown where
 
 import Cheapskate.Types
+import qualified Data.Char as Char
 import Data.Foldable (fold, toList)
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as Text
 import Data.Text (Text)
+import Data.Text.Extra (longestSpanOf, LongestSpanResult(..))
 import Elm.Utils ((|>))
+import qualified Regex
 
 
 formatMarkdown :: (String -> Maybe String) -> Blocks -> String
@@ -90,8 +93,14 @@ formatMardownBlock formatCode context block =
 
         CodeBlock (CodeAttr lang _info) code ->
             let
+                isElm =
+                    lang' == "elm" || lang' == ""
+
                 formatted =
-                    fromMaybe (Text.unpack $ ensureNewline code) $ formatCode $ Text.unpack code
+                    fromMaybe (Text.unpack $ ensureNewline code) $
+                        if isElm
+                            then formatCode $ Text.unpack code
+                            else Nothing
 
                 ensureNewline text =
                     if Text.last text == '\n'
@@ -100,9 +109,6 @@ formatMardownBlock formatCode context block =
 
                 lang' =
                     Text.unpack lang
-
-                isElm =
-                    lang' == "elm" || lang' == ""
 
                 canIndent =
                     case context of
@@ -168,16 +174,26 @@ formatMarkdownInline fixSpecialChars inline =
         Strong inlines ->
             "**" ++ (fold $ fmap (formatMarkdownInline True) $ inlines) ++ "**" -- TODO: escaping
         Code text ->
-            "`" ++ Text.unpack text ++ "`" -- TODO: escape backticks
+            case longestSpanOf '`' text of
+                NoSpan -> "`" ++ Text.unpack text ++ "`"
+                Span n ->
+                    let
+                        delimiter = replicate (n + 1) '`'
+                    in
+                    delimiter ++ " " ++ Text.unpack text ++ " " ++ delimiter
 
         Link inlines (Url url) title ->
             let
-                text = fold $ fmap (formatMarkdownInline False) $ inlines
+                text = fold $ fmap (formatMarkdownInline fixSpecialChars) $ inlines
+                textRaw = fold $ fmap (formatMarkdownInline False) $ inlines
 
                 title' = Text.unpack title
                 url' = Text.unpack url
+
+                isValidAutolink =
+                    Regex.match absoluteUrlRegex
             in
-                if text == url' && title' == ""
+                if textRaw == url' && title' == "" && isValidAutolink url'
                     then
                         if fixSpecialChars
                             then "<" ++ url' ++ ">"
@@ -190,7 +206,7 @@ formatMarkdownInline fixSpecialChars inline =
 
         Link inlines (Ref ref) _ ->
             let
-                text = fold $ fmap (formatMarkdownInline False) $ inlines
+                text = fold $ fmap (formatMarkdownInline fixSpecialChars) $ inlines
 
                 ref' = Text.unpack ref
             in
@@ -199,7 +215,7 @@ formatMarkdownInline fixSpecialChars inline =
                     else "[" ++ text ++ "][" ++ ref' ++ "]"
 
         Image inlines url title ->
-            "![" ++ (fold $ fmap (formatMarkdownInline False) $ inlines)
+            "![" ++ (fold $ fmap (formatMarkdownInline fixSpecialChars) $ inlines)
                 ++ "](" ++ Text.unpack url
                 ++ (if Text.unpack title == "" then "" else " \"" ++ Text.unpack title ++ "\"")
                 ++ ")"
@@ -225,3 +241,31 @@ formatMarkdownInline fixSpecialChars inline =
                 -- TODO: .   dot (when?)
                 -- TODO: !   exclamation mark (when?)
                 _ -> Text.singleton c
+
+
+{-| As defined at https://spec.commonmark.org/0.29/#autolinks -}
+absoluteUrlRegex :: Regex.Regex Char
+absoluteUrlRegex =
+    schemeInitial * Regex.plus schemeSubsequent * Regex.once ':' * Regex.star urlSafe
+    where
+        schemeInitial = Regex.satisfy isSchemeInitial
+        schemeSubsequent = Regex.satisfy isSchemeSubsequent
+        urlSafe = Regex.satisfy isUrlSafe
+
+        isSchemeInitial c =
+            isAsciiUpper c || isAsciiLower c
+
+        isSchemeSubsequent c =
+            isAsciiUpper c || isAsciiLower c || isAsciiDigit c || c == '+' || c == '.' || c == '-'
+
+        isUrlSafe c =
+            not (Char.isSpace c && c == '<' && c == '>')
+
+        isAsciiUpper c =
+            c >= 'A' && c <= 'Z'
+
+        isAsciiLower c =
+            c >= 'a' && c <= 'z'
+
+        isAsciiDigit c =
+            c >= '0' && c <= '9'

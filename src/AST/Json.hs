@@ -477,7 +477,7 @@ instance ToJSON (ASTNS Located [UppercaseIdentifier] 'PatternNK) where
 instance ToJSON (ASTNS Located [UppercaseIdentifier] 'TypeNK) where
     showJSON type' =
         case extract $ I.unFix type' of
-            TypeConstruction (NamedConstructor (namespace, name)) args ->
+            TypeConstruction (NamedConstructor (namespace, name)) args forceMultine ->
                 makeObj
                     [ type_ "TypeReference"
                     , ( "name", showJSON name )

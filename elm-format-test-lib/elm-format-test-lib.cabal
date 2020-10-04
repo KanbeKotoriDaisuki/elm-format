@@ -63,5 +63,7 @@ test-suite elm-format-test-lib-tests
         Data.FileTreeTest
 
     build-depends:
-        tasty-discover >= 4.2.1 && < 5,
         elm-format-test-lib
+
+    build-tool-depends:
+        tasty-discover:tasty-discover >= 4.2.1 && < 5
