@@ -5,6 +5,7 @@ import Data.FileTree (FileTree)
 import qualified Data.FileTree as FileTree
 import Data.Text (Text)
 import Test.Tasty.Hspec
+import System.FilePath (pathSeparator)
 
 
 spec_spec :: Spec
@@ -20,6 +21,12 @@ spec_spec =
             (mempty :: FileTree Text)
                 |> FileTree.read "/file.txt"
                 |> flip shouldBe Nothing
+
+        it "normalizes paths" $ do
+            (mempty :: FileTree Text)
+                |> FileTree.write "/file.txt" "{}"
+                |> FileTree.read (pathSeparator : "./file.txt")
+                |> flip shouldBe (Just "{}")
 
         describe "doesFileExist" $ do
             it "is false for non-existant" $ do

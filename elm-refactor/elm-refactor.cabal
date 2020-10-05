@@ -61,7 +61,7 @@ executable elm-refactor
     main-is: Main.hs
 
 
-test-suite elm-refactor-tests
+test-suite er-tests
     import: common-options
 
     type: exitcode-stdio-1.0

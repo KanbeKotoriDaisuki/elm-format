@@ -232,7 +232,7 @@ library
         Reporting.Result
 
 
-test-suite elm-format-lib-tests
+test-suite efl-tests
     import: common-options
     type: exitcode-stdio-1.0
 

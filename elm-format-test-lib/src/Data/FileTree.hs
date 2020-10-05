@@ -9,6 +9,7 @@ import Prelude hiding (read)
 import Data.List.Split (splitOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import System.FilePath (pathSeparator, normalise)
 
 
 data FileTree' f a
@@ -73,18 +74,20 @@ write' path a tree = tree <> singleton path a
 
 type FileTree = FileTree' String
 
+toPath :: FilePath -> [String]
+toPath path = splitOn [pathSeparator] $ normalise path
+
 doesFileExist :: FilePath -> FileTree a -> Bool
-doesFileExist path tree = doesFileExist' (splitOn "/" path) tree
+doesFileExist path tree = doesFileExist' (toPath path) tree
 
 doesDirectoryExist :: FilePath -> FileTree a -> Bool
-doesDirectoryExist path tree = doesDirectoryExist' (splitOn "/" path) tree
+doesDirectoryExist path tree = doesDirectoryExist' (toPath path) tree
 
 listDirectory :: FilePath -> FileTree a -> [FilePath]
-listDirectory path tree = listDirectory' (splitOn "/" path) tree
+listDirectory path tree = listDirectory' (toPath path) tree
 
 read :: FilePath -> FileTree a -> Maybe a
-read path tree = read' (splitOn "/" path) tree
+read path tree = read' (toPath path) tree
 
 write :: FilePath -> a -> FileTree a -> FileTree a
-write path contents tree = write' (splitOn "/" path) contents tree
-
+write path contents tree = write' (toPath path) contents tree
