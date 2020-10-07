@@ -27,7 +27,7 @@ Extra-source-files: README.md
 
 source-repository head
     type:     git
-    location: git://github.com/avh4/elm-format.git
+    location: git://github.com/KanbeKotoriDaisuki/elm-format.git
 
 
 library
