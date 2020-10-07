@@ -1,7 +1,4 @@
-[![Build Status](https://travis-ci.org/avh4/elm-format.svg?branch=master)](https://travis-ci.org/avh4/elm-format)
-[![latest version: 0.8.4](https://img.shields.io/badge/version-0.8.4-orange.svg)](https://github.com/avh4/elm-format/releases/tag/0.8.4)
-
-# elm-format
+# elm-format, a customized version
 
 > `elm-format` is still in beta.  If you run into any problems, please [report them](https://github.com/avh4/elm-format/issues).
 >
